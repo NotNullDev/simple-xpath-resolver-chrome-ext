@@ -1,0 +1,12 @@
+body {
+  width: 200px;
+  height: 200px;
+  border-radius: 10px;
+  background-color: darkgray;
+  display: flex;
+  flex-direction: column;
+}
+
+button {
+  margin-bottom: 5px;
+}
