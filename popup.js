@@ -70,7 +70,7 @@ document.querySelector("#start-button")
           <style>
             #${extensionElementId} {
               position: absolute;
-              z-index: 999;
+              z-index: 2147483647;
               width: 300px;
               height: 300px;
               background-color: darkgray;
@@ -78,7 +78,7 @@ document.querySelector("#start-button")
     
             #${extensionElementId}header {
               padding: 10px;
-              z-index: 998;
+              z-index: 2147483647;
               cursor: move;
               background-color: #1a45ff;
               color: darkgray;
