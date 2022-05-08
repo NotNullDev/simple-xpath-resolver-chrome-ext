@@ -33,58 +33,58 @@ document.querySelector("#start-button")
           console.log('Expression to evaluate: ' + expressionValue);
 
           const extensionElementId = "mydiv";
-
-          // let body = document.querySelector("body");
-          // let xpe = new XPathEvaluator();
-          // let nsResolver = xpe.createNSResolver(document.documentElement);
-          // let result = xpe.evaluate(expressionValue, body, nsResolver, 0, null);
-          // let found = [];
-          // let res = null;
-          // while (res = result.iterateNext())
-          //   found.push(res);
-          //
-          // console.dir("result = " + found);
-          // console.dir("found = " + found);
-          //
-          // if(found.length > 0) {
-          //   found.forEach(e => {
-          //     console.log(e.innerHTML);
-          //     e.style.backgroundColor = "yellow";
-          //   })
-          // }
+          const highlightColor = "yellow";
+          const highlightOpacity = "80";
 
           // haha
           let html = `
             <div id="${extensionElementId}">
               <!-- Include a header DIV with the same name as the draggable DIV, followed by "header" -->
-              <div id="${extensionElementId}header">Click here to move</div>
-              <p>Move</p>
-              <p>this</p>
-              <p>DIV</p>
+              <div id="${extensionElementId}header">
+              <div>Drag me!</div>
+              </div>
+                <label for="xpath-opacity-range">Opacity</label>
+                <input id="xpath-opacity-range" type="range" value="100" min="10" max="100">
+                <input id="xpath-expression-input"  placeholder="XPath expression">
+                <button id="xpath-evaluate-button">Evaluate</button>
+                
+                <div>
+                    Found elements: <span id="xpath-found-elements">0</span>
+                </div>      
+                <div>
+                    Current selected: <span id="xpath-current-selected">1</span>
+                </div>
+                
+                <div style="display: flex;">
+                  <button id="xpath-previous-button">Previous</button>
+                  <button id="xpath-next-button">Next</button>
+                </div>
+                <div>
+                    <div>Error:</div>
+                    <div id="xpath-error-message"></div>
+                </div>
             </div>
            `
-
-          console.log(html);
-
           let css = `
           <style>
             #${extensionElementId} {
               position: absolute;
-              z-index: 9;
-              background-color: #f1f1f1;
-              border: 1px solid #d3d3d3;
-              text-align: center;
+              z-index: 999;
+              width: 300px;
+              height: 300px;
+              background-color: darkgray;
             }
     
             #${extensionElementId}header {
               padding: 10px;
+              z-index: 998;
               cursor: move;
-              z-index: 10;
-              background-color: #2196F3;
-              color: #fff;
+              background-color: #1a45ff;
+              color: darkgray;
             }
           </style>
           `
+
           let extElement = document.createElement("div");
           extElement.id = "extension"
 
@@ -95,6 +95,128 @@ document.querySelector("#start-button")
 
           document.querySelector("body")
               .appendChild(extElement);
+
+          initListenersForExtension();
+
+          function initListenersForExtension() {
+            // opacity handler
+            {
+              let opacityInputElement = document.querySelector("#xpath-opacity-range");
+              opacityInputElement
+                  .addEventListener("change", (e) => {
+
+                    let newOpacity = document.querySelector("#xpath-opacity-range").value;
+
+                    document.querySelector(`#${extensionElementId}`)
+                        .style.opacity = `${newOpacity}%`;
+
+                  })
+            }
+
+            // evaluation and navigation
+            {
+                let currentSelected = 0;
+                let resultsArray = [];
+                let oldBgColor = "";
+
+                document.querySelector("#xpath-evaluate-button")
+                    .addEventListener("click", e => {
+                        const inputEl = document.querySelector("#xpath-expression-input");
+                        let xPathExpression = inputEl.value;
+
+                        let foundCountEl = document.querySelector("#xpath-found-elements");
+
+                        let errorEl = document.querySelector("#xpath-error-message");
+
+                         try {
+                          resultsArray = resolveXPath(xPathExpression);
+                          foundCountEl
+                              .innerHTML = resultsArray.length.toString();
+                          errorEl.innerHTML = "";
+                         } catch (err) {
+                             console.log("err msg: " + err);
+                             errorEl
+                                 .innerHTML = err;
+                             foundCountEl.innerHTML = "0";
+                         }
+                    });
+
+                document.querySelector("#xpath-next-button")
+                    .addEventListener("click", e => {
+                      if (currentSelected < resultsArray.length - 1) {
+                        ++currentSelected;
+                      } else if (currentSelected === resultsArray.length - 1) {
+                        currentSelected = 0;
+                      }
+                      setNewCurrentSelected(currentSelected);
+                      const currentEl = resultsArray[currentSelected];
+                      console.log(currentEl);
+                      console.log(currentEl.getBoundingClientRect());
+                      currentEl.scrollIntoView();
+                      createRectangle(
+                          currentEl.getBoundingClientRect().width,
+                          currentEl.getBoundingClientRect().height,
+                          currentEl.getBoundingClientRect().left,
+                          currentEl.getBoundingClientRect().top,
+                          highlightColor,
+                          highlightOpacity
+                      );
+                    });
+
+              document.querySelector("#xpath-previous-button")
+                  .addEventListener("click", e => {
+                    if (currentSelected > 0) {
+                      --currentSelected;
+                    } else if (currentSelected === 0) {
+                      currentSelected = resultsArray.length - 1;
+                    }
+                    setNewCurrentSelected(currentSelected);
+                    const currentEl = resultsArray[currentSelected];
+                    console.log(currentEl);
+                    console.log(currentEl.getBoundingClientRect());
+                    currentEl.scrollIntoView();
+                    createRectangle(
+                        currentEl.getBoundingClientRect().width,
+                        currentEl.getBoundingClientRect().height,
+                        currentEl.getBoundingClientRect().left,
+                        currentEl.getBoundingClientRect().top,
+                        highlightColor,
+                        highlightOpacity
+                    );
+                  });
+            }
+
+
+          }
+
+          function createRectangle(width, height, x, y, color, opacity) {
+              const rectangleEl = document.createElement("div");
+              rectangleEl.style.backgroundColor = color;
+              rectangleEl.style.opacity = `${opacity}%`;
+
+              rectangleEl.style.width  = `${width}px`;
+              rectangleEl.style.height = `${height}px`;
+
+              rectangleEl.id = width + height + x + y + color + opacity + Math.random() * 100 + (new Date().toISOString());
+
+            console.log(`creating rectangle with: ${width} ${height} ${x} ${y} ${color} ${opacity}` );
+            console.log(rectangleEl);
+
+
+            rectangleEl.style.position = "absolute";
+              rectangleEl.style.top  = y;
+              rectangleEl.style.left = x;
+
+              document.querySelector("body")
+                  .appendChild(rectangleEl);
+
+              return rectangleEl.id;
+          }
+
+          function setNewCurrentSelected(newValue) {
+            document.querySelector("#xpath-current-selected")
+                .innerHTML = newValue;
+          }
 
           // code to move extModal
           dragElement(document.getElementById(extensionElementId));
@@ -140,6 +262,17 @@ document.querySelector("#start-button")
             }
           }
 
+          function resolveXPath(xPathExpression) {
+              let body = document.querySelector("body");
+              let xpe = new XPathEvaluator();
+              let nsResolver = xpe.createNSResolver(document.documentElement);
+              let result = xpe.evaluate(xPathExpression, body, nsResolver, 0, null);
+              let found = [];
+              let res = null;
+              while (res = result.iterateNext())
+                found.push(res);
+            return found;
+          }
 
           let lastPositionFromTop = document.documentElement.scrollTop;
           document.addEventListener('scroll', e => {
