@@ -10,7 +10,6 @@ init()
 
 document.querySelector("#start-button")
   .addEventListener('click', async e => {
-
     // extension modal code:
 
     let expressionInput = document.querySelector("#expression-value");
@@ -32,9 +31,11 @@ document.querySelector("#start-button")
           expressionValue = expressionValue.expressionValue;
           console.log('Expression to evaluate: ' + expressionValue);
 
+          // test site https://www.w3schools.com/jsref/prop_range_value.asp
+            // //*[text()[contains(.,'Try it Yourself »')]]
           const extensionElementId = "mydiv";
           const highlightColor = "yellow";
-          const highlightOpacity = "80";
+          const highlightOpacity = "80%";
 
           // haha
           let html = `
@@ -117,7 +118,7 @@ document.querySelector("#start-button")
             {
                 let currentSelected = 0;
                 let resultsArray = [];
-                let oldBgColor = "";
+                let firstQuery = true;
 
                 document.querySelector("#xpath-evaluate-button")
                     .addEventListener("click", e => {
@@ -139,11 +140,15 @@ document.querySelector("#start-button")
                                  .innerHTML = err;
                              foundCountEl.innerHTML = "0";
                          }
+                         firstQuery = true;
+                         currentSelected = 0;
                     });
 
                 document.querySelector("#xpath-next-button")
                     .addEventListener("click", e => {
-                      if (currentSelected < resultsArray.length - 1) {
+                      if (firstQuery) {
+                        firstQuery = false;
+                      } else if (currentSelected < resultsArray.length - 1) {
                         ++currentSelected;
                       } else if (currentSelected === resultsArray.length - 1) {
                         currentSelected = 0;
@@ -152,20 +157,23 @@ document.querySelector("#start-button")
                       const currentEl = resultsArray[currentSelected];
                       console.log(currentEl);
                       console.log(currentEl.getBoundingClientRect());
-                      currentEl.scrollIntoView();
+                      // do not call getBoundingClientRect when something is moving, else it can return 0!
                       createRectangle(
-                          currentEl.getBoundingClientRect().width,
-                          currentEl.getBoundingClientRect().height,
-                          currentEl.getBoundingClientRect().left,
-                          currentEl.getBoundingClientRect().top,
+                          `${currentEl.getBoundingClientRect().width}px`,
+                          `${currentEl.getBoundingClientRect().height}px`,
+                          `${currentEl.getBoundingClientRect().x}px`,
+                          `${currentEl.getBoundingClientRect().y}px`,
                           highlightColor,
                           highlightOpacity
                       );
+                      currentEl.scrollIntoView(false);
                     });
 
               document.querySelector("#xpath-previous-button")
                   .addEventListener("click", e => {
-                    if (currentSelected > 0) {
+                    if(firstQuery) {
+                      firstQuery = false;
+                    } else if (currentSelected > 0) {
                       --currentSelected;
                     } else if (currentSelected === 0) {
                       currentSelected = resultsArray.length - 1;
@@ -174,15 +182,15 @@ document.querySelector("#start-button")
                     const currentEl = resultsArray[currentSelected];
                     console.log(currentEl);
                     console.log(currentEl.getBoundingClientRect());
-                    currentEl.scrollIntoView();
                     createRectangle(
-                        currentEl.getBoundingClientRect().width,
-                        currentEl.getBoundingClientRect().height,
-                        currentEl.getBoundingClientRect().left,
-                        currentEl.getBoundingClientRect().top,
+                        `${currentEl.getBoundingClientRect().width}px`,
+                        `${currentEl.getBoundingClientRect().height}px`,
+                        `${currentEl.getBoundingClientRect().x}px`,
+                        `${currentEl.getBoundingClientRect().y}px`,
                         highlightColor,
                         highlightOpacity
                     );
+                    currentEl.scrollIntoView(false);
                   });
             }
 
@@ -192,20 +200,20 @@ document.querySelector("#start-button")
           function createRectangle(width, height, x, y, color, opacity) {
               const rectangleEl = document.createElement("div");
               rectangleEl.style.backgroundColor = color;
-              rectangleEl.style.opacity = `${opacity}%`;
+              rectangleEl.style.opacity = `${opacity}`;
 
-              rectangleEl.style.width  = `${width}px`;
-              rectangleEl.style.height = `${height}px`;
+              rectangleEl.style.width  = width;
+              rectangleEl.style.height = height;
 
               rectangleEl.id = width + height + x + y + color + opacity + Math.random() * 100 + (new Date().toISOString());
 
-            console.log(`creating rectangle with: ${width} ${height} ${x} ${y} ${color} ${opacity}` );
-            console.log(rectangleEl);
+              console.log(`creating rectangle with: width ${width} height ${height} x ${x} y ${y} color ${color} opacity ${opacity}` );
+              console.log(rectangleEl);
 
-
-            rectangleEl.style.position = "absolute";
+              rectangleEl.style.position = "absolute";
               rectangleEl.style.top  = y;
               rectangleEl.style.left = x;
+              rectangleEl.style.zIndex = "2147483647";
 
               document.querySelector("body")
                   .appendChild(rectangleEl);
@@ -281,8 +289,6 @@ document.querySelector("#start-button")
 
             const elementToMove = document.querySelector("#" + extensionElementId);
 
-            console.log("Element before: " + elementToMove.style.top);
-
             // initial position
             if(!elementToMove.style.top) {
 
@@ -303,8 +309,7 @@ document.querySelector("#start-button")
             currentPxFromTop += diff;
             elementToMove.style.top = `${currentPxFromTop}px`;
 
-            console.log("Element after: " + elementToMove.style.top);
-            elementToMove.style.zIndex = Infinity;
+            elementToMove.style.zIndex = "2147483647";
           });
 
           // to set up initial extension element position
