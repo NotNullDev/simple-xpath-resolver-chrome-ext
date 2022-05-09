@@ -17,11 +17,11 @@ document.querySelector("#start-button")
     let expressionValue = "not used";
 
     chrome.storage.sync.set({"expressionValue": expressionValue}, () => {
-      console.log("saved");
+      //console.log("saved");
     });
 
     chrome.storage.sync.get(['expressionValue'], val => {
-      console.log("get: " + val.expressionValue);
+      //console.log("get: " + val.expressionValue);
     });
 
     await chrome.scripting.executeScript({
@@ -29,7 +29,7 @@ document.querySelector("#start-button")
       function: () => {
         chrome.storage.sync.get(['expressionValue'], expressionValue => {
           expressionValue = expressionValue.expressionValue;
-          console.log('Expression to evaluate: ' + expressionValue);
+          //console.log('Expression to evaluate: ' + expressionValue);
 
           // test site https://www.w3schools.com/jsref/prop_range_value.asp
             // //*[text()[contains(.,'Try it Yourself »')]]
@@ -61,6 +61,11 @@ document.querySelector("#start-button")
                   <button id="xpath-next-button">Next</button>
                 </div>
                 <div>
+                    <button id="xpath-log-current-to-console">Log current element to the console</button>
+                    <button id="xpath-select-all">Select all</button>
+                    <button id="xpath-unselect-all">Unselect all</button>
+                </div>
+                <div>
                     <div>Error:</div>
                     <div id="xpath-error-message"></div>
                 </div>
@@ -74,6 +79,7 @@ document.querySelector("#start-button")
               width: 300px;
               height: 300px;
               background-color: darkgray;
+              padding: 5px;
             }
     
             #${extensionElementId}header {
@@ -119,6 +125,35 @@ document.querySelector("#start-button")
                 let currentSelected = 0;
                 let resultsArray = [];
                 let firstQuery = true;
+                let drawRectanglesIds = [];
+
+                document.querySelector("#xpath-select-all")
+                    .addEventListener('click', e => {
+                        resultsArray.forEach(currentEl => {
+                            let createdRectangleId = createRectangle(
+                                `${currentEl.getBoundingClientRect().width}px`,
+                                `${currentEl.getBoundingClientRect().height}px`,
+                                `${currentEl.getBoundingClientRect().x}px`,
+                                `${currentEl.getBoundingClientRect().y}px`,
+                                highlightColor,
+                                highlightOpacity
+                            );
+                            drawRectanglesIds.push(createdRectangleId);
+                        });
+                    });
+
+                document.querySelector("#xpath-unselect-all")
+                    .addEventListener('click', e => {
+                        drawRectanglesIds.filter(id => {
+                            try{
+                                document.getElementById(id)
+                                    .remove();
+                            } catch (outOfRange) {
+
+                            }
+                            return false;
+                        })
+                    });
 
                 document.querySelector("#xpath-evaluate-button")
                     .addEventListener("click", e => {
@@ -135,7 +170,7 @@ document.querySelector("#start-button")
                               .innerHTML = resultsArray.length.toString();
                           errorEl.innerHTML = "";
                          } catch (err) {
-                             console.log("err msg: " + err);
+                             //console.log("err msg: " + err);
                              errorEl
                                  .innerHTML = err;
                              foundCountEl.innerHTML = "0";
@@ -155,18 +190,21 @@ document.querySelector("#start-button")
                       }
                       setNewCurrentSelected(currentSelected);
                       const currentEl = resultsArray[currentSelected];
-                      console.log(currentEl);
-                      console.log(currentEl.getBoundingClientRect());
-                      // do not call getBoundingClientRect when something is moving, else it can return 0!
-                      createRectangle(
-                          `${currentEl.getBoundingClientRect().width}px`,
-                          `${currentEl.getBoundingClientRect().height}px`,
-                          `${currentEl.getBoundingClientRect().x}px`,
-                          `${currentEl.getBoundingClientRect().y}px`,
-                          highlightColor,
-                          highlightOpacity
-                      );
-                      currentEl.scrollIntoView(false);
+                        let createdRectangleId = createRectangle(
+                            `${currentEl.getBoundingClientRect().width}px`,
+                            `${currentEl.getBoundingClientRect().height}px`,
+                            `${currentEl.getBoundingClientRect().x}px`,
+                            `${currentEl.getBoundingClientRect().y}px`,
+                            highlightColor,
+                            highlightOpacity
+                        );
+                        if(drawRectanglesIds.length > 0) {
+                            try {
+                                document.getElementById(drawRectanglesIds.pop()).remove();
+                            } catch (ignored) {}
+                        }
+                        drawRectanglesIds.push(createdRectangleId);
+                        currentEl.scrollIntoView(false);
                     });
 
               document.querySelector("#xpath-previous-button")
@@ -180,9 +218,7 @@ document.querySelector("#start-button")
                     }
                     setNewCurrentSelected(currentSelected);
                     const currentEl = resultsArray[currentSelected];
-                    console.log(currentEl);
-                    console.log(currentEl.getBoundingClientRect());
-                    createRectangle(
+                    let createdRectangleId = createRectangle(
                         `${currentEl.getBoundingClientRect().width}px`,
                         `${currentEl.getBoundingClientRect().height}px`,
                         `${currentEl.getBoundingClientRect().x}px`,
@@ -190,11 +226,21 @@ document.querySelector("#start-button")
                         highlightColor,
                         highlightOpacity
                     );
+                    if(drawRectanglesIds.length > 0) {
+                        try {
+                            document.getElementById(drawRectanglesIds.pop()).remove();
+                        } catch (ignored) {}
+                    }
+                    drawRectanglesIds.push(createdRectangleId);
                     currentEl.scrollIntoView(false);
                   });
+
+                document.querySelector("#xpath-log-current-to-console")
+                    .addEventListener('click', e => {
+                        console.log(resultsArray[currentSelected]);
+                    });
+
             }
-
-
           }
 
           function createRectangle(width, height, x, y, color, opacity) {
@@ -207,15 +253,21 @@ document.querySelector("#start-button")
 
               rectangleEl.id = width + height + x + y + color + opacity + Math.random() * 100 + (new Date().toISOString());
 
-              console.log(`creating rectangle with: width ${width} height ${height} x ${x} y ${y} color ${color} opacity ${opacity}` );
-              console.log(rectangleEl);
+              //console.log(`creating rectangle with: width ${width} height ${height} x ${x} y ${y} color ${color} opacity ${opacity}` );
+              //console.log(rectangleEl);
 
               rectangleEl.style.position = "absolute";
-              rectangleEl.style.top  = y;
+              rectangleEl.style.top  = y + document.documentElement.scrollTop;
               rectangleEl.style.left = x;
               rectangleEl.style.zIndex = "2147483647";
 
-              document.querySelector("body")
+              let bodyElement = document.querySelector("body");
+
+              if(!bodyElement.style.position) {
+                  bodyElement.style.position = 'relative';
+              }
+
+              bodyElement
                   .appendChild(rectangleEl);
 
               return rectangleEl.id;
@@ -292,10 +344,10 @@ document.querySelector("#start-button")
             // initial position
             if(!elementToMove.style.top) {
 
-              const initTop = `${window.screen.availHeight / 2 - elementToMove.clientHeight}px`;
+              const initTop = `${window.screen.availHeight / 2 - elementToMove.clientHeight + document.documentElement.scrollTop}px`;
               const initLeft = `${window.screen.availWidth / 2 - elementToMove.clientWidth}px`;
 
-              console.log(`init:\n top: ${initTop} left: ${initLeft}`);
+              //console.log(`init:\n top: ${initTop} left: ${initLeft}`);
 
               // elementToMove.style.top = "100px";
               // elementToMove.style.left = "100px";
@@ -320,7 +372,7 @@ document.querySelector("#start-button")
           }
 
 
-          console.log("Extension started successfully");
+          //console.log("Extension started successfully");
         }); // chrome scrip function callback
       },
     });
