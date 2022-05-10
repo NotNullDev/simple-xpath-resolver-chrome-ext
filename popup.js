@@ -130,15 +130,7 @@ document.querySelector("#start-button")
                 document.querySelector("#xpath-select-all")
                     .addEventListener('click', e => {
                         resultsArray.forEach(currentEl => {
-                            let createdRectangleId = createRectangle(
-                                `${currentEl.getBoundingClientRect().width}px`,
-                                `${currentEl.getBoundingClientRect().height}px`,
-                                `${currentEl.getBoundingClientRect().x}px`,
-                                `${currentEl.getBoundingClientRect().y}px`,
-                                highlightColor,
-                                highlightOpacity
-                            );
-                            drawRectanglesIds.push(createdRectangleId);
+                            drawOverElementWithDefaults(currentEl)
                         });
                     });
 
@@ -181,58 +173,12 @@ document.querySelector("#start-button")
 
                 document.querySelector("#xpath-next-button")
                     .addEventListener("click", e => {
-                      if (firstQuery) {
-                        firstQuery = false;
-                      } else if (currentSelected < resultsArray.length - 1) {
-                        ++currentSelected;
-                      } else if (currentSelected === resultsArray.length - 1) {
-                        currentSelected = 0;
-                      }
-                      setNewCurrentSelected(currentSelected);
-                      const currentEl = resultsArray[currentSelected];
-                        let createdRectangleId = createRectangle(
-                            `${currentEl.getBoundingClientRect().width}px`,
-                            `${currentEl.getBoundingClientRect().height}px`,
-                            `${currentEl.getBoundingClientRect().x}px`,
-                            `${currentEl.getBoundingClientRect().y}px`,
-                            highlightColor,
-                            highlightOpacity
-                        );
-                        if(drawRectanglesIds.length > 0) {
-                            try {
-                                document.getElementById(drawRectanglesIds.pop()).remove();
-                            } catch (ignored) {}
-                        }
-                        drawRectanglesIds.push(createdRectangleId);
-                        currentEl.scrollIntoView(false);
+                        moveToTheNextElement();
                     });
 
               document.querySelector("#xpath-previous-button")
                   .addEventListener("click", e => {
-                    if(firstQuery) {
-                      firstQuery = false;
-                    } else if (currentSelected > 0) {
-                      --currentSelected;
-                    } else if (currentSelected === 0) {
-                      currentSelected = resultsArray.length - 1;
-                    }
-                    setNewCurrentSelected(currentSelected);
-                    const currentEl = resultsArray[currentSelected];
-                    let createdRectangleId = createRectangle(
-                        `${currentEl.getBoundingClientRect().width}px`,
-                        `${currentEl.getBoundingClientRect().height}px`,
-                        `${currentEl.getBoundingClientRect().x}px`,
-                        `${currentEl.getBoundingClientRect().y}px`,
-                        highlightColor,
-                        highlightOpacity
-                    );
-                    if(drawRectanglesIds.length > 0) {
-                        try {
-                            document.getElementById(drawRectanglesIds.pop()).remove();
-                        } catch (ignored) {}
-                    }
-                    drawRectanglesIds.push(createdRectangleId);
-                    currentEl.scrollIntoView(false);
+                        moveToThePreviousElement();
                   });
 
                 document.querySelector("#xpath-log-current-to-console")
@@ -240,8 +186,64 @@ document.querySelector("#start-button")
                         console.log(resultsArray[currentSelected]);
                     });
 
+                function moveToTheNextElement() {
+                    if (firstQuery) {
+                        firstQuery = false;
+                    } else if (currentSelected < resultsArray.length - 1) {
+                        ++currentSelected;
+                    } else if (currentSelected === resultsArray.length - 1) {
+                        currentSelected = 0;
+                    }
+                    setNewCurrentSelected(currentSelected);
+                    const currentEl = resultsArray[currentSelected];
+                    drawOverElementWithDefaults(currentEl)
+                    if(drawRectanglesIds.length > 0) {
+                        try {
+                            document.getElementById(drawRectanglesIds.pop()).remove();
+                        } catch (ignored) {}
+                    }
+                    currentEl.scrollIntoView(false);
+                    document.documentElement.scroll(0,
+                        window.screen.availHeight / 2 - currentEl.getBoundingClientRect().height);
+                }
+
+                function moveToThePreviousElement() {
+                    if(firstQuery) {
+                        firstQuery = false;
+                    } else if (currentSelected > 0) {
+                        --currentSelected;
+                    } else if (currentSelected === 0) {
+                        currentSelected = resultsArray.length - 1;
+                    }
+                    setNewCurrentSelected(currentSelected);
+                    const currentEl = resultsArray[currentSelected];
+                    drawOverElementWithDefaults(currentEl)
+                    if(drawRectanglesIds.length > 0) {
+                        try {
+                            document.getElementById(drawRectanglesIds.pop()).remove();
+                        } catch (ignored) {}
+                    }
+                    currentEl.scrollIntoView(false);
+                    document.documentElement.scroll(0,
+                        window.screen.availHeight / 2 - currentEl.getBoundingClientRect().height);
+                }
+
+                function drawOverElementWithDefaults(elementToDrawOver) {
+                    let createdRectangleId = createRectangle(
+                        `${elementToDrawOver.getBoundingClientRect().width}px`,
+                        `${elementToDrawOver.getBoundingClientRect().height}px`,
+                        `${elementToDrawOver.getBoundingClientRect().x}px`,
+                        `${elementToDrawOver.getBoundingClientRect().y  +
+                        document.documentElement.scrollTop}px`,
+                        highlightColor,
+                        highlightOpacity
+                    );
+                    drawRectanglesIds.push(createdRectangleId);
+                }
             }
-          }
+              }
+
+
 
           function createRectangle(width, height, x, y, color, opacity) {
               const rectangleEl = document.createElement("div");
@@ -257,7 +259,7 @@ document.querySelector("#start-button")
               //console.log(rectangleEl);
 
               rectangleEl.style.position = "absolute";
-              rectangleEl.style.top  = y + document.documentElement.scrollTop;
+              rectangleEl.style.top  = y;
               rectangleEl.style.left = x;
               rectangleEl.style.zIndex = "2147483647";
 
